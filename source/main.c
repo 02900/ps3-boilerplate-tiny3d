@@ -134,14 +134,16 @@ int main(void)
         MATRIX proj = MatrixProjPerspective(DEG2RAD(60.0f), ASPECT, 0.1f, 1000.0f);
         tiny3d_SetProjectionMatrix(&proj);
 
-        /* model/view: push 4.5 units down -Z FIRST, then rotate in place.
-         * Tiny3D's MatrixMultiply(old,new) composes so the rightmost factor
-         * hits the vertex first, so translation must seed the matrix and the
-         * rotations follow — otherwise the cube ORBITS the camera (radius 4.5)
-         * instead of spinning, swinging out of the frustum most of the time. */
-        MATRIX mv = MatrixTranslation(0.0f, 0.0f, -4.5f);
-        mv = MatrixMultiply(mv, MatrixRotationX(pitch));
+        /* model/view. Tiny3D applies the model-view as a ROW vector (v' = v*M)
+         * and MatrixMultiply(old,new) = old*new, so the LEFTMOST factor hits the
+         * vertex first. Camera sits at the origin looking down +Z, so:
+         *   1. rotate the cube about its own centre (origin)  -> spin in place
+         *   2. THEN translate +5.5 along +Z                   -> push in front
+         * Seeding with the translation instead makes the cube ORBIT the camera
+         * (and translating down -Z would shove it behind the camera = invisible). */
+        MATRIX mv = MatrixRotationX(pitch);
         mv = MatrixMultiply(mv, MatrixRotationY(yaw));
+        mv = MatrixMultiply(mv, MatrixTranslation(0.0f, 0.0f, 5.5f));
         tiny3d_SetMatrixModelView(&mv);
 
         draw_cube();
