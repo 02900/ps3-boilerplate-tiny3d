@@ -18,11 +18,12 @@
  *     A positive pitch tilts the view downward onto the board.
  *
  * Controls (pad on port 0):
+ *   D-pad ................ move the cube one cell (edge-triggered, clamped 0..7)
  *   Left stick ........... orbit the camera around the cube (yaw / pitch)
  *   Start ................ quit to the XMB
  *
- * Stage 2 will add D-pad movement of the cube across the cells (the camera
- * follows because its target is the cube's position).
+ * The camera follows the cube because its target is the cube's position.
+ * D-pad movement is mapped to world axes (UP = +Z away from the camera).
  */
 
 #include <stdio.h>
@@ -51,6 +52,11 @@
 /* Third-person camera (tune by eye in RPCS3). */
 #define CAM_DIST    7.0f                   /* distance from camera to the cube */
 #define CAM_TARGET_Y 0.8f                  /* look slightly above the cube base */
+#define CAM_FOV     50.0f                  /* degrees; lower = less stretch     */
+
+/* Cube hop animation between cells. */
+#define MOVE_SPEED  0.10f                  /* anim progress per frame (~10 fr)  */
+#define HOP_H       0.35f                  /* peak hop height (world units)     */
 
 /* Colours are RGBA (0xRRGGBBAA) for vertex/ttf; tiny3d_Clear wants 0xAARRGGBB. */
 #define SKY_CLEAR     0xff0E1A2E
@@ -145,8 +151,17 @@ int main(void)
     /* Camera orbit (driven by the left stick). */
     float camYaw = 0.0f, camPitch = 0.40f;   /* gentle look-down, behind cube */
 
-    /* Cube position on the board, in cells (start near the centre). */
+    /* Cube target cell on the board (start near the centre). */
     int cubeI = 4, cubeJ = 4;
+
+    /* Smooth hop animation: the cube slides from `from` to the target cell's
+     * centre as animT goes 0 -> 1 (1.0 = idle / move finished). */
+    float curX = cell_center(cubeI), curZ = cell_center(cubeJ);
+    float fromX = curX, fromZ = curZ;
+    float animT = 1.0f;
+
+    /* Previous D-pad state, for edge-triggered (one press = one cell) moves. */
+    int prevUp = 0, prevDown = 0, prevLeft = 0, prevRight = 0;
 
     sysUtilRegisterCallback(SYSUTIL_EVENT_SLOT0, sys_callback, NULL);
     init_screen();
@@ -162,6 +177,27 @@ int main(void)
 
             if (pad_data.BTN_START) running = 0;
 
+            /* D-pad moves the cube one cell per press (edge-triggered). World
+             * axes: UP = +Z (away from camera), RIGHT = +X. A new move is only
+             * accepted once the previous hop has finished (animT >= 1). */
+            int up = pad_data.BTN_UP, down = pad_data.BTN_DOWN;
+            int left = pad_data.BTN_LEFT, right = pad_data.BTN_RIGHT;
+            if (animT >= 1.0f) {
+                int ni = cubeI, nj = cubeJ;
+                if      (up    && !prevUp)    nj = cubeJ + 1;
+                else if (down  && !prevDown)  nj = cubeJ - 1;
+                else if (right && !prevRight) ni = cubeI + 1;
+                else if (left  && !prevLeft)  ni = cubeI - 1;
+                if (ni < 0) ni = 0; if (ni > BOARD_N - 1) ni = BOARD_N - 1;
+                if (nj < 0) nj = 0; if (nj > BOARD_N - 1) nj = BOARD_N - 1;
+                if (ni != cubeI || nj != cubeJ) {
+                    fromX = curX; fromZ = curZ;   /* start the hop from here */
+                    cubeI = ni;   cubeJ = nj;
+                    animT = 0.0f;
+                }
+            }
+            prevUp = up; prevDown = down; prevLeft = left; prevRight = right;
+
             /* Left stick orbits the camera (0..255, centred at 128). */
             float lx = (pad_data.ANA_L_H - 128) / 128.0f;
             float ly = (pad_data.ANA_L_V - 128) / 128.0f;
@@ -173,32 +209,49 @@ int main(void)
         if (camPitch < 0.1f) camPitch = 0.1f;
         if (camPitch > 1.3f) camPitch = 1.3f;
 
+        /* Advance the hop animation. Position eases (smoothstep) from `from` to
+         * the target cell; hopY is a sine arc that is 0 at both ends. */
+        if (animT < 1.0f) {
+            animT += MOVE_SPEED;
+            if (animT > 1.0f) animT = 1.0f;
+        }
+        float s = animT * animT * (3.0f - 2.0f * animT);   /* smoothstep */
+        curX = fromX + (cell_center(cubeI) - fromX) * s;
+        curZ = fromZ + (cell_center(cubeJ) - fromZ) * s;
+        float hopY = sinf(animT * 3.14159265f) * HOP_H;
+
         /* --- 3D pass ---------------------------------------------------- */
         tiny3d_Clear(SKY_CLEAR, TINY3D_CLEAR_ALL);
         tiny3d_Project3D();
 
-        MATRIX proj = MatrixProjPerspective(DEG2RAD(60.0f), ASPECT, 0.1f, 1000.0f);
+        MATRIX proj = MatrixProjPerspective(DEG2RAD(CAM_FOV), ASPECT, 0.1f, 1000.0f);
         tiny3d_SetProjectionMatrix(&proj);
 
-        /* Third-person camera orbiting the cube. Target = cube position (so the
-         * camera follows it). Bring the target to the origin, yaw + pitch, then
-         * push the whole scene +Z so the camera sits CAM_DIST behind the cube. */
-        float tx = cell_center(cubeI), tz = cell_center(cubeJ);
-        MATRIX mv = MatrixTranslation(-tx, -CAM_TARGET_Y, -tz);
+        /* Third-person camera orbiting the cube. Target = cube's (smoothed)
+         * position, so the camera glides after it. Bring the target to the
+         * origin, yaw + pitch, then push the scene +Z behind the camera. The
+         * camera tracks X/Z but not the hop, so it stays steady. */
+        MATRIX mv = MatrixTranslation(-curX, -CAM_TARGET_Y, -curZ);
         mv = MatrixMultiply(mv, MatrixRotationY(camYaw));
         mv = MatrixMultiply(mv, MatrixRotationX(-camPitch));   /* negative = look DOWN here */
         mv = MatrixMultiply(mv, MatrixTranslation(0.0f, 0.0f, CAM_DIST));
         tiny3d_SetMatrixModelView(&mv);
 
         draw_board();
-        /* Cube rests on the board: centre y = CUBE_HALF so its base is at y=0. */
-        draw_cube(tx, CUBE_HALF, tz, CUBE_HALF);
+        /* Cube rests on the board (base at y=0) plus the hop arc. */
+        draw_cube(curX, CUBE_HALF + hopY, curZ, CUBE_HALF);
 
         /* --- 2D HUD ----------------------------------------------------- */
         tiny3d_Project2D();
         reset_ttf_frame();
         display_ttf_string(40,  36, "PS3 3D Test - cube on chessboard", HUD_WHITE, 0, 18, 24);
-        display_ttf_string(40, 456, "Stick: orbit camera (3rd person)   Start: exit",
+
+        /* Current cell in chess notation: file a..h (cubeI), rank 1..8 (cubeJ). */
+        char cell[16];
+        snprintf(cell, sizeof(cell), "Cell: %c%d", 'a' + cubeI, cubeJ + 1);
+        display_ttf_string(40, 64, cell, HUD_DIM, 0, 14, 20);
+
+        display_ttf_string(40, 456, "D-pad: move   Stick: orbit camera   Start: exit",
                            HUD_DIM, 0, 14, 18);
 
         tiny3d_Flip();
