@@ -11,6 +11,7 @@
 # Env:
 #   PS3_TOOLCHAIN_IMAGE   Docker image to use
 #                         (default: ghcr.io/02900/ps3-toolchain:latest)
+#   PS3_NO_PULL=1         Skip the docker pull freshness check (use cached image)
 #
 # Note: on Apple Silicon add `--platform linux/amd64` to the docker run below.
 #
@@ -18,6 +19,14 @@ set -euo pipefail
 
 IMAGE="${PS3_TOOLCHAIN_IMAGE:-ghcr.io/02900/ps3-toolchain:latest}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Pull the toolchain image first so image-side updates actually land — `docker run`
+# reuses the locally cached image otherwise. This is a fast digest check when the
+# image is already current. Skip with PS3_NO_PULL=1 (offline / pinned).
+if [ "${PS3_NO_PULL:-0}" != "1" ]; then
+  echo ">> Pulling $IMAGE (set PS3_NO_PULL=1 to skip)"
+  docker pull "$IMAGE" || echo ">> pull failed (offline?), using cached image" >&2
+fi
 
 TARGET=""
 case "${1:-build}" in
