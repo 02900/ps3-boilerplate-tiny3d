@@ -14,7 +14,7 @@ endif
 #---------------------------------------------------------------------------------
 # Application metadata
 #---------------------------------------------------------------------------------
-TITLE		:=	PS3 3D Test
+TITLE		:=	PS3 Tiny3D Boilerplate
 APPID		:=	PS33DTEST
 CONTENTID	:=	UP0001-$(APPID)_00-0000000000000000
 ICON0		:=	pkgfiles/ICON0.PNG

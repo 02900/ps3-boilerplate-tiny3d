@@ -19,25 +19,32 @@ It inherits the standard scaffold from
 toolchain, Makefile, CI, PKG packaging) and vendors the shared
 [`ps3-homebrew-skills`](https://github.com/02900/ps3-homebrew-skills) as a submodule.
 
-> ## 🧪 Status: scaffold + spinning cube
-> One frame loop: clear → 3D pass (perspective cube) → 2D HUD → flip. Build is green in the
-> toolchain image; **on-hardware behaviour is unverified** until someone runs it on a PS3 / RPCS3.
+> ## Status: 2D sprite + audio starter
+> Loads a PNG sprite, bounces it around the screen and plays synthesized MikMod audio. Builds
+> green in the toolchain image and runs on RPCS3. *(The old 3D spinning-cube demo lives on the
+> [`3d-chessboard`](https://github.com/02900/ps3-boilerplate-tiny3d/tree/3d-chessboard) branch.)*
 
 ## What it does
 
-```
-main loop
-├─ tiny3d_Clear(SKY, TINY3D_CLEAR_ALL)
-├─ tiny3d_Project3D()
-│  ├─ MatrixProjPerspective(60°, 16:9, 0.1, 1000)  → tiny3d_SetProjectionMatrix
-│  ├─ rotate(pitch,yaw) · translate(0,0,-4.5)       → tiny3d_SetMatrixModelView
-│  └─ 6 quads, one colour per face (depth-tested)
-├─ tiny3d_Project2D() → ttf HUD
-└─ tiny3d_Flip()
+A minimal "hello, game": an embedded PNG sprite (`data/sprite.png` — an original placeholder)
+moves across Tiny3D's 848×512 2D canvas, **bounces off the four edges** (a blip plays on each
+bounce) while a short **synthesized tune** loops; the D-pad / left stick nudge it.
+
+```c
+ya2d_Texture *sprite = ya2d_loadPNGfromBuffer((void*)sprite_png, sprite_png_size);
+...
+tiny3d_Clear(SKY, TINY3D_CLEAR_ALL);
+tiny3d_Project2D();
+ya2d_drawTexture(sprite, x, y);      /* ya2d: PNG decode + textured quad */
+tiny3d_Flip();
+audio_play_blip();                    /* on bounce */
 ```
 
-**Controls** (pad on port 0): left stick / D-pad orbit the cube · **✕** holds the auto-spin ·
-**Start** exits to the XMB.
+The audio is synthesized in `source/audio.c` (no asset files); the sprite is embedded via
+`bin2o`. `ya2d` handles the PNG decode and the textured quad; `ttf_render.*` is still in the
+scaffold if you want `/dev_flash` TrueType text.
+
+**Controls** (pad on port 0): **D-pad / left stick** nudge the sprite · **Start** exits to the XMB.
 
 ## Building
 
