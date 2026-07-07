@@ -1,6 +1,12 @@
-# PS3 3D Test
+# PS3 Tiny3D Boilerplate
 
-A minimal **real-3D** sandbox for PS3 homebrew on the **PSL1GHT** SDK — a perspective
+> **📋 GitHub template repo** — click **“Use this template”** (or
+> `gh repo create my-game --template 02900/ps3-boilerplate-tiny3d`) to start a new PS3
+> homebrew project from this scaffold: Dockerized toolchain, Makefile, CI, PKG packaging
+> and the shared [`ps3-homebrew-skills`](https://github.com/02900/ps3-homebrew-skills)
+> submodule already wired.
+
+A minimal **starter** for PS3 homebrew on the **PSL1GHT** SDK using **Tiny3D** — a perspective
 camera and a spinning colour cube, drawn with the depth buffer. It exists to exercise
 Tiny3D's **3D** pipeline (`tiny3d_Project3D`, `MatrixProjPerspective`,
 `tiny3d_SetMatrixModelView`, depth test), which the sibling ports
@@ -9,7 +15,7 @@ Tiny3D's **3D** pipeline (`tiny3d_Project3D`, `MatrixProjPerspective`,
 2D mode (`tiny3d_Project2D`).
 
 It inherits the standard scaffold from
-[02900/ps3-homebrew-template](https://github.com/02900/ps3-homebrew-template) (Dockerized
+[02900/ps3-homebrew-showcase](https://github.com/02900/ps3-homebrew-showcase) (Dockerized
 toolchain, Makefile, CI, PKG packaging) and vendors the shared
 [`ps3-homebrew-skills`](https://github.com/02900/ps3-homebrew-skills) as a submodule.
 
@@ -65,7 +71,7 @@ Outputs are named after the mount dir (`/src`): `src.elf` / `src.self` / `src.pk
 ## Project structure
 
 ```
-ps3-3d-test/
+ps3-boilerplate-tiny3d/
 ├── .github/workflows/   # CI: build (toolchain image) + docs link lint
 ├── source/              # main.c (3D cube) + ttf_render.c (2D text overlay)
 ├── include/             # ttf_render.h
@@ -96,7 +102,7 @@ is new territory for those skills — findings here should flow back into the re
 ## Credits
 
 - Scaffold & toolchain: [02900/ps3-toolchain](https://github.com/02900/ps3-toolchain),
-  [02900/ps3-homebrew-template](https://github.com/02900/ps3-homebrew-template).
+  [02900/ps3-homebrew-showcase](https://github.com/02900/ps3-homebrew-showcase).
 
 ## License
 

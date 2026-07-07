@@ -24,7 +24,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ps3-3d-test
+          name: ps3-boilerplate-tiny3d
           # The Makefile names the output after the checkout dir (the repo name),
           # so match by glob rather than a hard-coded filename.
           path: "*.self"
