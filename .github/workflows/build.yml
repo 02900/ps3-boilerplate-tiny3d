@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     # The public toolchain image provides the cross compiler + PSL1GHT + libraries.
     container:
-      image: ghcr.io/02900/ps3-toolchain:latest
+      image: ghcr.io/02900/ps3-toolchain-tiny3d:latest
     steps:
       - uses: actions/checkout@v4
         with:

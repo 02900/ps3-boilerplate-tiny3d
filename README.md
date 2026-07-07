@@ -51,8 +51,8 @@ scaffold if you want `/dev_flash` TrueType text.
 You need the PSL1GHT toolchain — easiest via the prebuilt Docker image (no local install):
 
 ```bash
-docker run --rm -v "$PWD":/src -w /src ghcr.io/02900/ps3-toolchain make        # -> src.self
-docker run --rm -v "$PWD":/src -w /src ghcr.io/02900/ps3-toolchain make pkg    # -> src.pkg (XMB)
+docker run --rm -v "$PWD":/src -w /src ghcr.io/02900/ps3-toolchain-tiny3d make        # -> src.self
+docker run --rm -v "$PWD":/src -w /src ghcr.io/02900/ps3-toolchain-tiny3d make pkg    # -> src.pkg (XMB)
 ```
 
 Or the helper wrappers (they auto-retry the toolchain's transient emulation segfaults):

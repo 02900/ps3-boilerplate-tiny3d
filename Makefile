@@ -3,7 +3,7 @@
 #
 # A minimal real-3D sandbox (perspective camera + spinning cube) on the PSL1GHT
 # SDK. Build with the Dockerized toolchain:
-#   docker run --rm -v "$PWD":/src -w /src ghcr.io/02900/ps3-toolchain make
+#   docker run --rm -v "$PWD":/src -w /src ghcr.io/02900/ps3-toolchain-tiny3d make
 #---------------------------------------------------------------------------------
 .SUFFIXES:
 #---------------------------------------------------------------------------------
