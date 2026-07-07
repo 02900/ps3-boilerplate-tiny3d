@@ -6,13 +6,12 @@
 > and the shared [`ps3-homebrew-skills`](https://github.com/02900/ps3-homebrew-skills)
 > submodule already wired.
 
-A minimal **starter** for PS3 homebrew on the **PSL1GHT** SDK using **Tiny3D** — a perspective
-camera and a spinning colour cube, drawn with the depth buffer. It exists to exercise
-Tiny3D's **3D** pipeline (`tiny3d_Project3D`, `MatrixProjPerspective`,
-`tiny3d_SetMatrixModelView`, depth test), which the sibling ports
+A minimal **starter** for PS3 homebrew on the **PSL1GHT** SDK using **Tiny3D** + **ya2d** — an
+embedded PNG sprite that bounces around the screen while a synthesized MikMod tune plays. It
+exercises Tiny3D's **2D** mode (`tiny3d_Project2D`) plus `ya2d` textured quads and MikMod audio,
+the same 2D path the sibling ports
 ([ki-blast-arena](https://github.com/02900/ki-blast-arena),
-[ps3-mega-mario](https://github.com/02900/ps3-mega-mario)) don't — they only use Tiny3D's
-2D mode (`tiny3d_Project2D`).
+[ps3-mega-mario](https://github.com/02900/ps3-mega-mario)) build on.
 
 It inherits the standard scaffold from
 [02900/ps3-homebrew-showcase](https://github.com/02900/ps3-homebrew-showcase) (Dockerized
@@ -80,9 +79,9 @@ Outputs are named after the mount dir (`/src`): `src.elf` / `src.self` / `src.pk
 ```
 ps3-boilerplate-tiny3d/
 ├── .github/workflows/   # CI: build (toolchain image) + docs link lint
-├── source/              # main.c (3D cube) + ttf_render.c (2D text overlay)
+├── source/              # main.c (2D sprite) + audio.c (MikMod synth) + ttf_render.c
 ├── include/             # ttf_render.h
-├── data/                # bin2o-embedded assets (empty — the cube is code-generated)
+├── data/                # bin2o-embedded assets (sprite.png)
 ├── pkgfiles/            # PKG payload: ICON0.PNG
 ├── .claude/skills/      # Submodule: ps3-homebrew patterns, as Claude skills
 ├── docs/api/            # Per-library API notes (TINY3D, YA2D, …)
@@ -94,7 +93,7 @@ ps3-boilerplate-tiny3d/
 
 ## Toolchain & libraries
 
-Built against the toolchain image's libraries: **Tiny3D** (3D/RSX), **ya2d** (2D / textures),
+Built against the toolchain image's libraries: **Tiny3D** (RSX rendering), **ya2d** (2D / textures),
 **FreeType** (TTF text), plus the PSL1GHT pad/sysutil APIs. Clay is intentionally **not** wired in
 here (this is a rendering sandbox, not a UI app); re-add it like the siblings if a menu is needed.
 
@@ -103,8 +102,8 @@ here (this is a rendering sandbox, not a UI app); re-add it like the siblings if
 Reusable PS3/PSL1GHT conventions live in the shared
 [`.claude/skills/ps3-homebrew/`](https://github.com/02900/ps3-homebrew-skills) submodule, vendored
 once and used as Claude Code skills so every port stays in sync. Run `git submodule update --init`
-to fetch it. (`docs/PATTERNS.md` is now just a pointer there.) The **3D** path this repo exercises
-is new territory for those skills — findings here should flow back into the rendering skill.
+to fetch it. (`docs/PATTERNS.md` is now just a pointer there.) The Tiny3D **2D + audio** path this
+repo exercises should stay in sync with those skills — findings here flow back into the rendering skill.
 
 ## Credits
 
